@@ -18,7 +18,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         
         imageView.alpha = 0
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(editText))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(importImage))
     }
     
@@ -41,17 +40,16 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             paragraphStyle.alignment = .center
             
             let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 36),
+                .font: UIFont.boldSystemFont(ofSize: 50),
                 .foregroundColor: UIColor.white,
-                .strokeColor: UIColor.black,
                 .paragraphStyle: paragraphStyle
             ]
             
             let attributedTopString = NSAttributedString(string: topText, attributes: attrs)
-            attributedTopString.draw(with: CGRect(x: 32, y: 10, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
+            attributedTopString.draw(with: CGRect(x: 32, y: 0, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
             
             let attributedBottomString = NSAttributedString(string: bottomText, attributes: attrs)
-            attributedBottomString.draw(with: CGRect(x: 32, y: 460, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
+            attributedBottomString.draw(with: CGRect(x: 32, y: 450, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
         }
         
         self.imageView.alpha = 0
@@ -60,6 +58,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         UIView.animate(withDuration: 0.5, delay: 0, options: [], animations: {
             self.imageView.alpha = 1
         })
+        
+        // add extra buttons to navigation controller
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(editText))
+        navigationItem.rightBarButtonItems = [UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(importImage)), UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveImage))]
     }
     
     @objc func importImage() {
@@ -76,6 +78,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         // change top text
         let submitTopText = UIAlertAction(title: "Enter", style: .default) { [weak self] _ in
             guard let newTopText = ac.textFields?[0].text else { return }
+            
             self?.topText = newTopText
             
             // change bottom text
@@ -94,17 +97,16 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
                     paragraphStyle.alignment = .center
                     
                     let attrs: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 36),
+                        .font: UIFont.boldSystemFont(ofSize: 50),
                         .foregroundColor: UIColor.white,
-                        .strokeColor: UIColor.black,
                         .paragraphStyle: paragraphStyle
                     ]
                     
                     let attributedTopString = NSAttributedString(string: self?.topText ?? "", attributes: attrs)
-                    attributedTopString.draw(with: CGRect(x: 32, y: 10, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
+                    attributedTopString.draw(with: CGRect(x: 32, y: 0, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
                     
                     let attributedBottomString = NSAttributedString(string: self?.bottomText ?? "", attributes: attrs)
-                    attributedBottomString.draw(with: CGRect(x: 32, y: 460, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
+                    attributedBottomString.draw(with: CGRect(x: 32, y: 450, width: 448, height: 448), options: .usesLineFragmentOrigin, context: nil)
                 }
                 
                 self?.imageView.image = renderedImage
@@ -116,6 +118,32 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         
         ac.addAction(submitTopText)
         present(ac, animated: true)
+    }
+    
+    @objc func saveImage() {
+        let ac = UIAlertController(title: "Are you sure you want to save?", message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "Yes", style: .default, handler: { [weak self] _ in
+            guard let image = self?.imageView.image else {
+                let ac = UIAlertController(title: "Error", message: "There is no image to save.", preferredStyle: .alert)
+                ac.addAction(UIAlertAction(title: "OK", style: .default))
+                self?.present(ac, animated: true)
+                return
+            }
+            UIImageWriteToSavedPhotosAlbum(image, self, #selector(self!.image(_:didFinishSavingWithError:contextInfo:)), nil)
+        }))
+        ac.addAction(UIAlertAction(title: "No", style: .cancel))
+        present(ac, animated: true)
+    }
+    
+    @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+        if let error = error {
+            let ac = UIAlertController(title: "Save error", message: error.localizedDescription, preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .default))
+        } else {
+            let ac = UIAlertController(title: "Saved!", message: "Your meme has been saved to your photos.", preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .default))
+            present(ac, animated: true)
+        }
     }
 }
 
